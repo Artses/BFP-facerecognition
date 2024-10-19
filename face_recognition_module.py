@@ -1,6 +1,7 @@
 import cv2
 import face_recognition
 import threading
+import os
 
 class VideoCaptureThread(threading.Thread):
     def __init__(self, camera):
@@ -12,17 +13,27 @@ class VideoCaptureThread(threading.Thread):
     def run(self):
         while self.running:
             ret, self.frame = self.camera.read()
-            self.frame = cv2.resize(self.frame, (640, 480))
+            if ret:
+                self.frame = cv2.resize(self.frame, (640, 480))
 
     def stop(self):
         self.running = False
+
+def carregar_imagens_de_diretorio(diretorio):
+    imagens_conhecidas = []
+    for filename in os.listdir(diretorio):
+        if filename.endswith(('.jpg', '.jpeg', '.png')):
+            imagem = face_recognition.load_image_file(os.path.join(diretorio, filename))
+            codificacao = face_recognition.face_encodings(imagem)
+            if codificacao:
+                imagens_conhecidas.append((codificacao[0], filename))
+    return imagens_conhecidas
 
 def iniciar_reconhecimento(camera):
     capture_thread = VideoCaptureThread(camera)
     capture_thread.start()
 
-    imagem_conhecida = face_recognition.load_image_file("images/usuario1.jpg")
-    codificacao_conhecida = face_recognition.face_encodings(imagem_conhecida)[0]
+    imagens_conhecidas = carregar_imagens_de_diretorio("images")
 
     while True:
         frame = capture_thread.frame
@@ -31,12 +42,17 @@ def iniciar_reconhecimento(camera):
             codificacoes_rostos = face_recognition.face_encodings(frame, localizacao_rostos)
 
             for (top, right, bottom, left), codificacao in zip(localizacao_rostos, codificacoes_rostos):
-                match = face_recognition.compare_faces([codificacao_conhecida], codificacao)
+                distancias = face_recognition.face_distance([codificacao_conhecida for codificacao_conhecida, _ in imagens_conhecidas], codificacao)
+                menor_distancia_index = distancias.argmin()
+                menor_distancia = distancias[menor_distancia_index]
 
-                if match[0]:
-                    cv2.putText(frame, "Acesso permitido", (left, top-10), cv2.FONT_HERSHEY_SIMPLEX, 0.75, (0, 255, 0), 2)
+                porcentagem_seme = (1 - menor_distancia) * 100
+
+                if porcentagem_seme > 50: 
+                    nome = imagens_conhecidas[menor_distancia_index][1]
+                    cv2.putText(frame, f"{nome} - {porcentagem_seme:.2f}% similar", (left, top-10), cv2.FONT_HERSHEY_SIMPLEX, 0.75, (0, 255, 0), 2)
                 else:
-                    cv2.putText(frame, "Acesso negado", (left, top-10), cv2.FONT_HERSHEY_SIMPLEX, 0.75, (0, 0, 255), 2)
+                    cv2.putText(frame, f"Acesso negado - {nome} - {porcentagem_seme:.2f}% similar" , (left, top-10), cv2.FONT_HERSHEY_SIMPLEX, 0.75, (0, 0, 255), 2)
 
             cv2.imshow("Reconhecimento Facial", frame)
 
@@ -46,3 +62,4 @@ def iniciar_reconhecimento(camera):
     capture_thread.stop()
     camera.release()
     cv2.destroyAllWindows()
+    return "Fechado"

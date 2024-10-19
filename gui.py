@@ -34,10 +34,12 @@ class Application(tk.Tk):
         botao_cadastrar.pack(side=tk.LEFT, padx=5)        
 
     def cadastrar_aluno(self):
+        
         self.tirar_screenshot()
 
     def fazer_chamada(self):
         iniciar_reconhecimento(camera)
+        
 
     def tirar_screenshot(self):
         nome = askstring("Cadastro","Qual o nome do aluno?")
@@ -59,6 +61,7 @@ class Application(tk.Tk):
             self.label.configure(image=imgtk)
 
         self.label.after(10, self.update_camera)
+
 
 if __name__ == "__main__":
     app = Application()
