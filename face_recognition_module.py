@@ -35,7 +35,7 @@ def carregar_imagens_de_diretorio(diretorio):
 class PresencaRegistro:
     def __init__(self):
         self.presencas_registradas = {}
-        self.tempo_minimo_entre_registros = 600  # 5 minutos em segundos
+        self.tempo_minimo_entre_registros = 600
 
     def pode_registrar_presenca(self, nome):
         if nome not in self.presencas_registradas:
@@ -51,18 +51,20 @@ class PresencaRegistro:
         
         return False
 
-def enviar_presenca(nome):
-    url = "http://localhost:5137/api/User"
+def enviar_presenca(id):
+    url = "http://localhost:3000/chamada"
     data = {
-        "nome": nome
+        "aluno": id,
+        "professor": 1,
+        "tipoChamada":"Saída"
     }
     try:
         response = requests.post(url, json=data)
         response.raise_for_status()  
-        print(f"Presença de {nome} registrada com sucesso!")
+        print(f"Presença de {id} registrada com sucesso!")
         return True
     except requests.exceptions.RequestException as e:
-        print(f"Erro ao registrar presença de {nome}: {e}")
+        print(f"Erro ao registrar presença de {id}: {e}")
         return False
 
 def iniciar_reconhecimento(camera):

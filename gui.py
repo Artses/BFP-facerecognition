@@ -6,6 +6,8 @@ from face_recognition_module import iniciar_reconhecimento
 from screenshot_module import screenshot
 from tkinter.simpledialog import askstring
 
+
+
 camera = cv2.VideoCapture(0)
 
 class Application(tk.Tk):
